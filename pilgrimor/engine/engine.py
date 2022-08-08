@@ -57,5 +57,7 @@ def get_engine():
         )
         exit(1)
 
+    return engine
+
 
 engine = get_engine()

@@ -1,1 +1,0 @@
-"""Abstract engine for Pilgrimor."""

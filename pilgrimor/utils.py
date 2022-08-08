@@ -1,4 +1,6 @@
 class BColors:
+    """Colors for print function."""
+
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'
@@ -17,3 +19,30 @@ def eprint(text: str) -> None:
     :param text: text to print.
     """
     print(BColors.FAIL + text + BColors.ENDC)
+
+
+def aprint(text: str) -> None:
+    """
+    Print attention text.
+
+    :param text: text to print.
+    """
+    print(BColors.OKCYAN + text + BColors.ENDC)
+
+
+def wprint(text: str) -> None:
+    """
+    Print warning text.
+
+    :param text: text to print.
+    """
+    print(BColors.WARNING + text + BColors.ENDC)
+
+
+def sprint(text: str) -> None:
+    """
+    Print success text.
+
+    :param text: text to print.
+    """
+    print(BColors.OKGREEN + text + BColors.ENDC)
