@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "pilgrimor"
+version = "0.1.0"
+description = ""
+authors = ["Kiselev Aleksandr <askiselev00@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pydantic = "^1.9.1"
+tomlkit = "^0.11.1"
+python-dotenv = "^0.20.0"
+pilgrimor-postgresql-engine = {path = "../pilgrimor-postgresql-engine"}
+importlib-metadata = "^4.12.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[tool.pilgrimor]
+migrations_dir = "./pilgrimor/only_for_test/migrations/"
+database_engine = "PostgreSQLEngine"
+env_file = "./.env"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
