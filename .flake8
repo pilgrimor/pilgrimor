@@ -74,9 +74,10 @@ ignore =
   WPS332
   ; Found a too complex `f` string
   WPS237
-  ; indentation contains tabs, indentation contains mixed spaces and tabs
-  ; Found `%` string formatting, line too long (96 > 88 characters
-  vhs/db/queries/content.py: W191, E101, E501, WPS323
+  ; Possible SQL injection vector through string-based query construction
+  S608
+  ; Found `%` string formatting
+  WPS323
 
 per-file-ignores =
   ; all tests

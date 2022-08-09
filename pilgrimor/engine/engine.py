@@ -1,6 +1,6 @@
 
 from importlib.metadata import entry_points
-from settings import settings
+from pilgrimor.settings import PilgrimorSettings
 
 available_engines = (
     "PostgreSQLEngine",
@@ -8,7 +8,7 @@ available_engines = (
 )
 
 
-def get_engine():
+def get_engine(settings: PilgrimorSettings):
     """
     Returns the engine.
 
@@ -58,6 +58,3 @@ def get_engine():
         exit(1)
 
     return engine
-
-
-engine = get_engine()

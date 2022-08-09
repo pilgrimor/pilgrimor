@@ -53,6 +53,3 @@ class PilgrimorSettings(BaseSettings):
             eprint("Can't get PILGRIMOR_DATABASE_URL from .env file.")
 
         return PilgrimorSettings(**pilgrimor_settings)
-
-
-settings = PilgrimorSettings.new()

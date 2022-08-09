@@ -1,7 +1,7 @@
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 from importlib.metadata import entry_points
-from pilgrimor.settings import settings
+from pilgrimor.settings import PilgrimorSettings
 
 
 def get_default_parser():
@@ -53,7 +53,7 @@ def get_default_parser():
     return parser
 
 
-def get_parser():
+def get_parser(settings: PilgrimorSettings):
     parser: ArgumentParser = get_default_parser()
 
     if settings.migrator_cli == "RawSQLCLI":

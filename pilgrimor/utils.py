@@ -1,3 +1,9 @@
+from itertools import cycle
+from shutil import get_terminal_size
+from threading import Thread
+from time import sleep
+
+
 class BColors:
     """Colors for print function."""
 

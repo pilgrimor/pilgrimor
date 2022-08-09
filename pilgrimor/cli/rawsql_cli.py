@@ -26,10 +26,11 @@ class RawSQLMigratorCLI(BaseCLI):
         )
 
     def apply(self):
-        if not (version := getattr(self.namespace, "version")):
-            print("WOW!")
-            exit(1)
-        self.migrator.apply_migrations(version)
+        version = getattr(self.namespace, "version")
+        try:
+            self.migrator.apply_migrations(version)
+        except Exception as exc:
+            eprint(str(exc))
 
     def rollback(self):
         version = getattr(self.namespace, "version")
@@ -45,16 +46,21 @@ class RawSQLMigratorCLI(BaseCLI):
             )
 
         if version:
-            self.migrator.rollback_migrations(
-                version=version,
-                latest=False,
-            )
+            try:
+                self.migrator.rollback_migrations(
+                    version=version,
+                    latest=False,
+                )
+            except Exception as exc:
+                eprint(str(exc))
         if latest:
-            self.migrator.rollback_migrations(
-                version=None,
-                latest=True,
-            )
+            try:
+                self.migrator.rollback_migrations(
+                    version=None,
+                    latest=True,
+                )
+            except Exception as exc:
+                eprint(str(exc))
 
     def initdb(self):
-        print("We are in initdb")
         self.migrator.initialize_database()
