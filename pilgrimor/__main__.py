@@ -4,7 +4,7 @@ from pilgrimor.engine.engine import get_engine
 from pilgrimor.settings import PilgrimorSettings
 
 
-def run():
+def main():
     settings = PilgrimorSettings.new()
     engine = get_engine(
         settings,
@@ -19,4 +19,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    main()
