@@ -27,7 +27,7 @@ pytest-env = "^0.6.2"
 pytest-mock = "^3.8.2"
 
 [tool.poetry.scripts]
-taskiq = "pilgrimor.__main__:main"
+pilgrimor = "pilgrimor.__main__:main"
 
 [tool.isort]
 profile = "black"
