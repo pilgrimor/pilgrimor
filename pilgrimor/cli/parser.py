@@ -4,7 +4,7 @@ from importlib.metadata import entry_points
 from pilgrimor.settings import PilgrimorSettings
 
 
-def get_default_parser():
+def get_parse_args():
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 
     commands = parser.add_subparsers(
@@ -50,49 +50,4 @@ def get_default_parser():
         )
     )
 
-    return parser
-
-
-def get_parser(settings: PilgrimorSettings):
-    parser: ArgumentParser = get_default_parser()
-
-    if settings.migrator_cli == "RawSQLCLI":
-        return parser
-
-    new_parser = entry_points(group="pilgrimor-parser")
-
-    if not new_parser:
-        print(
-            """
-            You set %s migrator, but do not install it.
-            Please install it.
-            """
-        )
-        exit(1)
-
-    if len(new_parser) > 1:
-        print(
-            "You install many migrators. Please install required one."
-        )
-        exit(1)
-
-    try:
-        new_parser = new_parser[0].load()
-    except IndexError:
-        print("Can't load any parser.")
-        exit(1)
-
-    if new_parser.name != settings.migrator_cli:
-        print(
-            """
-            You set %s migrator, but install another one.
-            Please install required engine.
-            """,
-        )
-        exit(1)
-
-    parser._actions[1].choices.update(
-        new_parser._actions[1].choices
-    )
-
-    return parser
+    return parser.parse_args()

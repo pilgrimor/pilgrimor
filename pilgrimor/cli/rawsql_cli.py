@@ -10,7 +10,7 @@ class RawSQLMigratorCLI(BaseCLI):
 
     def __init__(
         self,
-        parser: ArgumentParser,
+        namespace: Namespace,
         engine,
         migrations_dir: str,
     ):
@@ -19,7 +19,7 @@ class RawSQLMigratorCLI(BaseCLI):
 
         :param parser: console argument parser.
         """
-        self.namespace: Namespace = parser.parse_args()
+        self.namespace: Namespace = namespace
         self.migrator: RawSQLMigator = RawSQLMigator(
             engine,
             migrations_dir,
@@ -27,10 +27,10 @@ class RawSQLMigratorCLI(BaseCLI):
 
     def apply(self):
         version = getattr(self.namespace, "version")
-        try:
-            self.migrator.apply_migrations(version)
-        except Exception as exc:
-            eprint(str(exc))
+        # try:
+        self.migrator.apply_migrations(version)
+        # except Exception as exc:
+        #     eprint(str(exc))
 
     def rollback(self):
         version = getattr(self.namespace, "version")

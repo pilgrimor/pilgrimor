@@ -48,8 +48,8 @@ warn_return_any = false
 namespace_packages = true
 
 [tool.pilgrimor]
-migrations_dir = "./pilgrimor/migrations/"
-database_engine = "PostgreSQLEngine"
+migrations_dir = "./migrations/"
+database_engine = "PSQL"
 env_file = "./.env"
 
 [build-system]

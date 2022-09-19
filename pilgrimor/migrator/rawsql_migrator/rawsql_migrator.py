@@ -15,6 +15,7 @@ from pilgrimor.exceptions import (
     WrongMigrationNumber,
 )
 from pilgrimor.utils import eprint, sprint, wprint
+from pilgrimor.abc.engine import PilgrimoreEngine
 
 
 class RawSQLMigator:
@@ -24,7 +25,7 @@ class RawSQLMigator:
     Can apply migration and monitor the state of the database.
     """
 
-    def __init__(self, engine, migration_dir: str) -> None:  # type: ignore
+    def __init__(self, engine: PilgrimoreEngine, migration_dir: str) -> None:  # type: ignore
         """
         Initialize the migrator.
 
@@ -45,10 +46,16 @@ class RawSQLMigator:
 
         :param version: version for new migrations.
         """
+        to_apply_migrations = []
+
         if not version:
-            self._apply_exist_migrations()
+            to_apply_migrations = self._get_exist_migrations()
         if version:
-            self._apply_migrations_with_version(version=version)
+            to_apply_migrations = self._get_migrations_with_version(version=version)
+
+        for migration in to_apply_migrations:
+            self._apply_migration(migration, version)
+            sprint(f"Applied migration {migration}")
 
     def rollback_migrations(
         self,
@@ -71,9 +78,13 @@ class RawSQLMigator:
         :param latest: rollback only latests migrations.
         """
         if version:
-            self._rollback_migration_by_version(version)
+            to_rollback_migations = self._rollback_migration_by_version(version)
         if latest:
-            self._rollback_latest_migrations()
+            to_rollback_migations = self._get_last_applied_migrations()
+
+        for migration in to_rollback_migations:
+            self._rollback_migration(migration)
+            sprint(f"Rolled back migration {migration}")
 
     def initialize_database(self) -> None:
         """Initialize new table for migration control."""
@@ -91,9 +102,9 @@ class RawSQLMigator:
 
         sprint("Database initialized!")
 
-    def _apply_migrations_with_version(self, version: str) -> None:
+    def _get_migrations_with_version(self, version: str) -> List[str]:
         """
-        Applies new migrations.
+        Returns new migrations.
 
         Workflow:
         Firstly, check is version already exists,
@@ -116,7 +127,7 @@ class RawSQLMigator:
         """
         if self._is_version_exists(version=version):
             raise VersionAlreadyExistsError(
-                f"Version {version} already exists. " f"Please choose another one.",
+                f"Version {version} already exists. Please choose another one.",
             )
         if bigger_versions := self._is_version_bigger_exists(version=version):
             raise BiggerVersionsExistsError(
@@ -127,13 +138,11 @@ class RawSQLMigator:
         if not (to_apply_migrations := self._get_to_apply_migrations()):
             raise NoNewMigrationsError("There are no new migrations to apply.")
 
-        for migration in to_apply_migrations:
-            self._apply_migration(migration, version)
-            sprint(f"Applied migration {migration}")
+        return to_apply_migrations
 
-    def _apply_exist_migrations(self) -> None:  # noqa: WPS210
+    def _get_exist_migrations(self) -> List[str]:  # noqa: WPS210
         """
-        Applies migrations with a known version.
+        Returns migrations with a known version.
 
         Iterate through the existing migration files
         and try to find an indication of which
@@ -146,6 +155,8 @@ class RawSQLMigator:
         that the migration history is incorrect
 
         :raises IncorrectMigrationHistoryError: if incorrect migration history.
+
+        :returns: list of migrations with known versions.
         """
         all_migrations = self._get_migration_files()
         is_previous_migration_has_version = True
@@ -173,19 +184,9 @@ class RawSQLMigator:
                 else:
                     is_previous_migration_has_version = False
 
-        for exist_migration, version in to_apply_migration:
-            self._apply_migration(exist_migration, version)
-            sprint(f"Applied migration {exist_migration}")
+        return to_apply_migration
 
-    def _rollback_latest_migrations(self) -> None:
-        """Rolls back last applied migrations."""
-        latest_migrations = self._get_last_applied_migrations()
-
-        for migration in latest_migrations:
-            self._rollback_migration(migration)
-            sprint(f"Rolled back migration {migration}")
-
-    def _rollback_migration_by_version(self, version: str) -> None:
+    def _rollback_migration_by_version(self, version: str) -> List[str]:
         """
         Rolls back migrations to specified version.
 
@@ -199,11 +200,7 @@ class RawSQLMigator:
                 f"Please choose another one.",
             )
 
-        migrations = self._get_migrations_by_version(version=version)
-
-        for migration in migrations:
-            self._rollback_migration(migration)
-            sprint(f"Rolled back migration {migration}")
+        return self._get_migrations_by_version(version=version)
 
     def _apply_migration(self, migration: str, version: str) -> None:
         """
@@ -309,9 +306,11 @@ class RawSQLMigator:
         all_migrations = self._get_migration_files()
 
         if not applied_migrations:
-            return set(all_migrations)
+            to_apply_migrations = set(all_migrations)
+        else:
+            to_apply_migrations = set(all_migrations) - set(applied_migrations)
 
-        return set(all_migrations) - set(applied_migrations)
+        return self._sort_migrations(to_apply_migrations)
 
     def _get_migration_files(self) -> List[str]:
         """

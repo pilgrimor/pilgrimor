@@ -18,6 +18,15 @@ class BColors:
     UNDERLINE = '\033[4m'
 
 
+def error_text(text: str) -> str:
+    """
+    Returns text in red.
+
+    :param text: text to make red.
+    """
+    return BColors.FAIL + text + BColors.ENDC
+
+
 def eprint(text: str) -> None:
     """
     Print error text.

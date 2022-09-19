@@ -11,14 +11,14 @@ class BaseCLI:
     the commands from the parser as methods.
     """
 
-    def __init__(self, parser: ArgumentParser) -> None:
+    def __init__(self, namespace: Namespace) -> None:
         """
         Initialize the CLI.
 
         :param parser: console argument parser.
         :param migrator: migrator instance
         """
-        self.namespace: Namespace = parser.parse_args()
+        self.namespace: Namespace = namespace
 
     def __call__(self):
         """
