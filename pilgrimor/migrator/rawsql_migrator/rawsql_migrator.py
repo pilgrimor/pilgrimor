@@ -3,7 +3,7 @@ from os import listdir
 from os.path import isfile, join
 from pathlib import Path
 import sys
-from typing import List, Optional, Set, Tuple
+from typing import Any, List, Optional, Set, Tuple
 
 from packaging.version import parse as version_parse
 from pilgrimor.exceptions import (
@@ -53,9 +53,7 @@ class RawSQLMigator:
         if version:
             to_apply_migrations = self._get_migrations_with_version(version=version)
 
-        for migration in to_apply_migrations:
-            self._apply_migration(migration, version)
-            sprint(f"Applied migration {migration}")
+        self.run_migrations(to_apply_migrations, version)
 
     def rollback_migrations(
         self,
@@ -82,9 +80,43 @@ class RawSQLMigator:
         if latest:
             to_rollback_migations = self._get_last_applied_migrations()
 
-        for migration in to_rollback_migations:
-            self._rollback_migration(migration)
-            sprint(f"Rolled back migration {migration}")
+        self.run_migrations(to_rollback_migations)
+
+    def run_migrations(
+        self,
+        migrations: List[str],
+        version: Optional[str] = None,
+        apply: bool = True,
+    ) -> None:
+        """
+        Runs migrations.
+
+        If apply is True, apply new migrations.
+        Else roll back migrations.
+
+        :param migrations: List of migration.
+        :param apply: to apply or not.
+        """
+        if apply:
+            to_run_func = self._apply_migration
+            command = "apply"
+        else:
+            to_run_func = self._rollback_migration
+            command = "rollback"
+        success_migrations = []
+
+        for migration in migrations:
+            try:
+                to_run_func(migration=migration, version=version)
+                sprint(f"Command {command} done for {migration}")
+                success_migrations.append(migration)
+            except Exception as exc:
+                not_applied_migrations = set(migrations) - set(success_migrations)
+                sys.exit(
+                    f"Can't {command} migrations {not_applied_migrations} because "
+                    f"there is error - {exc}"
+                )
+
 
     def initialize_database(self) -> None:
         """Initialize new table for migration control."""
@@ -257,7 +289,7 @@ class RawSQLMigator:
                 )
                 self._rollback_migration(migration=migration)
 
-    def _rollback_migration(self, migration: str) -> None:  # noqa: WPS324
+    def _rollback_migration(self, migration: str, **kwargs: Any) -> None:  # noqa: WPS324
         """
         Rolls back migration.
 
@@ -265,6 +297,7 @@ class RawSQLMigator:
         rollback context, if not found, do not rollback migration.
 
         :param migration: migration to apply.
+        :param kwargs: any named arguments.
 
         :returns: None.
         """

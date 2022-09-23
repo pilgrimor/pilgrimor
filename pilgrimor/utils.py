@@ -27,6 +27,33 @@ def error_text(text: str) -> str:
     return BColors.FAIL + text + BColors.ENDC
 
 
+def attention_text(text: str) -> str:
+    """
+    Returns text in attention color.
+
+    :param text: text to make blue.
+    """
+    return BColors.OKCYAN + text + BColors.ENDC
+
+
+def warning_text(text: str) -> str:
+    """
+    Returns text in attention color.
+
+    :param text: text to make blue.
+    """
+    return BColors.WARNING + text + BColors.ENDC
+
+
+def success_text(text: str) -> str:
+    """
+    Print success text.
+
+    :param text: text to print.
+    """
+    return BColors.OKGREEN + text + BColors.ENDC
+
+
 def eprint(text: str) -> None:
     """
     Print error text.
