@@ -117,7 +117,6 @@ class RawSQLMigator:
                     f"there is error - {exc}"
                 )
 
-
     def initialize_database(self) -> None:
         """Initialize new table for migration control."""
         query = """
