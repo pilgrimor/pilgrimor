@@ -6,6 +6,7 @@ import sys
 from typing import Any, List, Optional, Set, Tuple
 
 from packaging.version import parse as version_parse
+from pilgrimor.abc.migrator import BaseMigrator
 from pilgrimor.exceptions import (
     BiggerVersionsExistsError,
     IncorrectMigrationHistoryError,
@@ -18,7 +19,7 @@ from pilgrimor.utils import eprint, sprint, wprint
 from pilgrimor.abc.engine import PilgrimoreEngine
 
 
-class RawSQLMigator:
+class RawSQLMigator(BaseMigrator):
     """
     Migrator for .sql files.
 
@@ -34,88 +35,6 @@ class RawSQLMigator:
         """
         self.engine = engine
         self.migrations_dir = migration_dir
-
-    def apply_migrations(self, version: Optional[str]) -> None:
-        """
-        Applies migrations.
-
-        If the version is not specified,
-        then we apply migrations with an already known version.
-        If the version is specified,
-        get new migrations and apply them.
-
-        :param version: version for new migrations.
-        """
-        to_apply_migrations = []
-
-        if not version:
-            to_apply_migrations = self._get_exist_migrations()
-        if version:
-            to_apply_migrations = self._get_migrations_with_version(version=version)
-
-        self.run_migrations(to_apply_migrations, version)
-
-    def rollback_migrations(
-        self,
-        version: Optional[str] = None,
-        latest: bool = False,
-    ) -> None:
-        """
-        Rolls back migrations.
-
-        There are two options - version and latest.
-        If version was choosen, downgrade the version
-        of migrations to the specified version
-        and rollback all migrations that were
-        before this version inclusive
-
-        If latest is specifed, only migration based on latest
-        version will be rolled back.
-
-        :param version: version for migrations.
-        :param latest: rollback only latests migrations.
-        """
-        if version:
-            to_rollback_migations = self._rollback_migration_by_version(version)
-        if latest:
-            to_rollback_migations = self._get_last_applied_migrations()
-
-        self.run_migrations(to_rollback_migations)
-
-    def run_migrations(
-        self,
-        migrations: List[str],
-        version: Optional[str] = None,
-        apply: bool = True,
-    ) -> None:
-        """
-        Runs migrations.
-
-        If apply is True, apply new migrations.
-        Else roll back migrations.
-
-        :param migrations: List of migration.
-        :param apply: to apply or not.
-        """
-        if apply:
-            to_run_func = self._apply_migration
-            command = "apply"
-        else:
-            to_run_func = self._rollback_migration
-            command = "rollback"
-        success_migrations = []
-
-        for migration in migrations:
-            try:
-                to_run_func(migration=migration, version=version)
-                sprint(f"Command {command} done for {migration}")
-                success_migrations.append(migration)
-            except Exception as exc:
-                not_applied_migrations = set(migrations) - set(success_migrations)
-                sys.exit(
-                    f"Can't {command} migrations {not_applied_migrations} because "
-                    f"there is error - {exc}"
-                )
 
     def initialize_database(self) -> None:
         """Initialize new table for migration control."""
@@ -217,7 +136,7 @@ class RawSQLMigator:
 
         return to_apply_migration
 
-    def _rollback_migration_by_version(self, version: str) -> List[str]:
+    def _get_rollback_migration_by_version(self, version: str) -> List[str]:
         """
         Rolls back migrations to specified version.
 

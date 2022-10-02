@@ -1,6 +1,11 @@
+import sys
+
 from typing import Any, List, Optional, Tuple
 
-import psycopg
+try:
+    import psycopg
+except ImportError:
+    sys.exit("You must install psycopg with psycopg_pool.")
 
 
 class PostgreSQLEngine:
