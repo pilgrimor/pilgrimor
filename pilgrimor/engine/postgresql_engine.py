@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Tuple
 try:
     import psycopg
 except ImportError:
-    sys.exit("You must install psycopg with psycopg_pool.")
+    sys.exit("You must install psycopg.")
 
 
 class PostgreSQLEngine:
