@@ -2,21 +2,20 @@ import re
 from os import listdir
 from os.path import isfile, join
 from pathlib import Path
-import sys
 from typing import Any, List, Optional, Set, Tuple
 
 from packaging.version import parse as version_parse
+
 from pilgrimor.abc.migrator import BaseMigrator
 from pilgrimor.exceptions import (
     BiggerVersionsExistsError,
     IncorrectMigrationHistoryError,
-    MigrationNumberRepeatNumber,
+    MigrationNumberRepeatNumberError,
     NoNewMigrationsError,
     VersionAlreadyExistsError,
-    WrongMigrationNumber,
+    WrongMigrationNumberError,
 )
-from pilgrimor.utils import eprint, sprint, wprint
-from pilgrimor.abc.engine import PilgrimoreEngine
+from pilgrimor.utils import error_text, success_text, warning_text
 
 
 class RawSQLMigator(BaseMigrator):
@@ -25,16 +24,6 @@ class RawSQLMigator(BaseMigrator):
 
     Can apply migration and monitor the state of the database.
     """
-
-    def __init__(self, engine: PilgrimoreEngine, migration_dir: str) -> None:  # type: ignore
-        """
-        Initialize the migrator.
-
-        :param engine: Engine to execute migrations queries.
-        :param migration_dir: path to migrations.
-        """
-        self.engine = engine
-        self.migrations_dir = migration_dir
 
     def initialize_database(self) -> None:
         """Initialize new table for migration control."""
@@ -49,8 +38,7 @@ class RawSQLMigator(BaseMigrator):
             sql_query=query,
             sql_query_params=(),
         )
-
-        sprint("Database initialized!")
+        print(success_text("Database initialized!"))
 
     def _get_migrations_with_version(self, version: str) -> List[str]:
         """
@@ -74,6 +62,8 @@ class RawSQLMigator(BaseMigrator):
         :raises VersionAlreadyExistsError: if version is already exists.
         :raises BiggerVersionsExistsError: if bigger versions are exists.
         :raises NoNewMigrationsError: if no new migrations.
+
+        :returns: migrations that will be applied.
         """
         if self._is_version_exists(version=version):
             raise VersionAlreadyExistsError(
@@ -143,6 +133,8 @@ class RawSQLMigator(BaseMigrator):
         :param version: version to which it is rolled back
 
         :raises VersionAlreadyExistsError: if version is already exists.
+
+        :returns: migrations by selected version.
         """
         if not self._is_version_exists(version=version):
             raise VersionAlreadyExistsError(
@@ -177,9 +169,11 @@ class RawSQLMigator(BaseMigrator):
         try:
             apply_query = query.split("-- rollback --")[0]
         except KeyError:
-            wprint(
-                f"You don't split apply and rollback context in migration "
-                f"{migration}. All commands will be applied.",
+            print(
+                warning_text(
+                    f"You don't split apply and rollback context in migration "
+                    f"{migration}. All commands will be applied.",
+                ),
             )
             apply_query = query
 
@@ -200,14 +194,20 @@ class RawSQLMigator(BaseMigrator):
                     version=version,
                 )
             except Exception as exc:
-                eprint(
-                    f"Can't set version in migration file\n"
-                    f"Rolling back migration {migration}\n"
-                    f"Reason - {exc}",
+                print(
+                    error_text(
+                        f"Can't set version in migration file\n"
+                        f"Rolling back migration {migration}\n"
+                        f"Reason - {exc}",
+                    ),
                 )
                 self._rollback_migration(migration=migration)
 
-    def _rollback_migration(self, migration: str, **kwargs: Any) -> None:  # noqa: WPS324
+    def _rollback_migration(  # noqa: WPS324
+        self,
+        migration: str,
+        **kwargs: Any,
+    ) -> None:
         """
         Rolls back migration.
 
@@ -225,9 +225,12 @@ class RawSQLMigator(BaseMigrator):
         try:
             rollback_query = query.split("-- rollback --")[1]
         except KeyError:
-            wprint(
-                f"You don't split apply and rollback context in migration {migration}."
-                f"Can't rollback this migration.",
+            print(
+                warning_text(
+                    f"You don't split apply and rollback "
+                    f"context in migration {migration}."
+                    f"Can't rollback this migration.",
+                ),
             )
             return None
 
@@ -256,10 +259,10 @@ class RawSQLMigator(BaseMigrator):
         applied_migrations = self._get_applied_migrations()
         all_migrations = self._get_migration_files()
 
-        if not applied_migrations:
-            to_apply_migrations = set(all_migrations)
-        else:
+        if applied_migrations:
             to_apply_migrations = set(all_migrations) - set(applied_migrations)
+        else:
+            to_apply_migrations = set(all_migrations)
 
         return self._sort_migrations(to_apply_migrations)
 
@@ -410,20 +413,20 @@ class RawSQLMigator(BaseMigrator):
 
         :param migrations: migrations.
 
-        :raises WrongMigrationNumber: if migration has wrong number.
-        :raises MigrationNumberRepeatNumber: migration number duplicates.
+        :raises WrongMigrationNumberError: if migration has wrong number.
+        :raises MigrationNumberRepeatNumberError: migration number duplicates.
         """
         exists_numbers = []
         for migration in migrations:
             try:
                 migration_number = int(migration.split("_")[0])
             except (KeyError, ValueError):
-                raise WrongMigrationNumber(
+                raise WrongMigrationNumberError(
                     f"There is migration with wrong number - {migration}\n"
                     f"Migration name must be - <number>_<migration_name>.sql",
                 )
             if migration_number in exists_numbers:
-                raise MigrationNumberRepeatNumber(
+                raise MigrationNumberRepeatNumberError(
                     f"There are two or more migrations with number {migration_number}",
                 )
             exists_numbers.append(migration_number)

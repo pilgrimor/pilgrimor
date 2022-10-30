@@ -1,1 +1,3 @@
-__version__ = '0.1.0'
+"""Pilgrimor migrator."""
+
+__version__ = "0.1.0"

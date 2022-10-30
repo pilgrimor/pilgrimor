@@ -78,6 +78,8 @@ ignore =
   S608
   ; Found `%` string formatting
   WPS323
+  ; Found wrong function call: print
+  WPS421
 
 per-file-ignores =
   ; all tests

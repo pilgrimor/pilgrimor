@@ -1,10 +1,12 @@
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-
-from importlib.metadata import entry_points
-from pilgrimor.settings import PilgrimorSettings
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 
 
-def get_parse_args():
+def get_parse_args() -> Namespace:
+    """
+    Parses input terminal args.
+
+    :returns: Namespace.
+    """
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
 
     commands = parser.add_subparsers(
@@ -44,10 +46,10 @@ def get_parse_args():
     )
     downgrade_command.add_argument(
         "--latest",
-        action='store_true',
+        action="store_true",
         help=(
             "Downgrade last applied version."
-        )
+        ),
     )
 
     return parser.parse_args()

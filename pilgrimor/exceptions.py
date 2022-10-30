@@ -10,11 +10,11 @@ class IncorrectMigrationHistoryError(BasePilgrimorError):
     """Error if migrations have incorrect history."""
 
 
-class WrongMigrationNumber(ApplyMigrationsError):
+class WrongMigrationNumberError(ApplyMigrationsError):
     """Wrong migration number."""
 
 
-class MigrationNumberRepeatNumber(ApplyMigrationsError):
+class MigrationNumberRepeatNumberError(ApplyMigrationsError):
     """Error if there are two or more migrations with the same number."""
 
 

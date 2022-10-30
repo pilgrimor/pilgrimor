@@ -1,9 +1,9 @@
-from abc import ABC, abstractmethod
 import sys
+from abc import ABC, abstractmethod
 from typing import List, Optional
 
 from pilgrimor.abc.engine import PilgrimoreEngine
-from pilgrimor.utils import sprint
+from pilgrimor.utils import success_text
 
 
 class BaseMigrator(ABC):
@@ -23,12 +23,14 @@ class BaseMigrator(ABC):
         :param engine: Migration engine.
         :param migration_dir: path to the directory with migration files.
         """
+        self.engine = engine
+        self.migrations_dir = migration_dir
 
     @abstractmethod
     def initialize_database(self) -> None:
         """Initialize new table for migration control."""
 
-    def apply_migations(self, version: Optional[str]) -> None:
+    def apply_migrations(self, version: Optional[str]) -> None:
         """
         Applies new migrations.
 
@@ -88,6 +90,7 @@ class BaseMigrator(ABC):
         Else roll back migrations.
 
         :param migrations: List of migration.
+        :param version: migration version.
         :param apply: to apply or not.
         """
         if apply:
@@ -101,13 +104,13 @@ class BaseMigrator(ABC):
         for migration in migrations:
             try:
                 to_run_func(migration=migration, version=version)
-                sprint(f"Command {command} done for {migration}")
+                print(success_text(f"Command {command} done for {migration}"))
                 success_migrations.append(migration)
             except Exception as exc:
                 not_applied_migrations = set(migrations) - set(success_migrations)
                 sys.exit(
                     f"Can't {command} migrations {not_applied_migrations} because "
-                    f"there is error - {exc}"
+                    f"there is error - {exc}",
                 )
 
     @abstractmethod

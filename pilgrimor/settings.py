@@ -1,11 +1,11 @@
+import logging
 import sys
-from pydantic import BaseSettings
 
 import tomlkit
 from dotenv import dotenv_values
-import logging
+from pydantic import BaseSettings
 
-from pilgrimor.utils import eprint, error_text
+from pilgrimor.utils import error_text
 
 logger = logging.getLogger("pilgrimor.settings")
 
@@ -19,7 +19,7 @@ class PilgrimorSettings(BaseSettings):
     migrator_cli: str = "RAW"
 
     @classmethod
-    def new(cls):
+    def new(cls):  # noqa: C901
         """
         Create new instance of Settings.
 

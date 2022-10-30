@@ -1,11 +1,12 @@
 import sys
-
 from typing import Any, List, Optional, Tuple
 
+from pilgrimor.utils import error_text
+
 try:
-    import psycopg
+    import psycopg  # noqa: WPS433
 except ImportError:
-    sys.exit("You must install psycopg.")
+    sys.exit(error_text("You must install psycopg, psycopg-c and psycopg-binary."))
 
 
 class PostgreSQLEngine:

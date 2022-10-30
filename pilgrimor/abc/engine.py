@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Tuple
 class PilgrimoreEngine(ABC):
     """
     Base class for any engine for pilgrimor.
-    
+
     Engine to execute sql quries.
 
     The engine works with the database.

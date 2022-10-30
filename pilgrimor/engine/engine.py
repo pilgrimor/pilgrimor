@@ -1,20 +1,26 @@
-from importlib.metadata import entry_points
 import sys
-from pilgrimor.settings import PilgrimorSettings
+from importlib.metadata import entry_points
+
+from pilgrimor.abc.engine import PilgrimoreEngine
 from pilgrimor.engine.postgresql_engine import PostgreSQLEngine
+from pilgrimor.settings import PilgrimorSettings
 
 engines_map = {
     "PSQL": PostgreSQLEngine,
 }
 
 
-def get_engine(settings: PilgrimorSettings):
+def get_engine(settings: PilgrimorSettings) -> PilgrimoreEngine:  # noqa: C901
     """
     Returns the engine.
 
     Check if the specified engine exists in pyproject.toml.
     Next, check if there is an installed engine.
     And in the end, we check whether the correct engine is installed.
+
+    :param settings: pilgrimor settings.
+
+    :returns: SQL engine.
     """
     if engine := engines_map.get(settings.database_engine):
         return engine

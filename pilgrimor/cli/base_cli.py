@@ -1,6 +1,6 @@
-from argparse import ArgumentParser, Namespace
+from argparse import Namespace
 
-from pilgrimor.utils import eprint, aprint
+from pilgrimor.utils import attention_text, error_text
 
 
 class BaseCLI:
@@ -15,8 +15,7 @@ class BaseCLI:
         """
         Initialize the CLI.
 
-        :param parser: console argument parser.
-        :param migrator: migrator instance
+        :param namespace: namespace with arguments.
         """
         self.namespace: Namespace = namespace
 
@@ -30,16 +29,23 @@ class BaseCLI:
         if self.namespace.command:
             available_commands = [
                 command_name
-                for command_name
-                in self.__dir__()
+                for command_name in self.__dir__()
                 if not command_name.startswith("__")
                 and not command_name.startswith("_")
             ]
             if self.namespace.command not in available_commands:
-                eprint(f"Can't find {self.namespace.command}.")
+                print(
+                    error_text(
+                        f"Can't find {self.namespace.command}.",
+                    ),
+                )
                 exit(1)
 
             getattr(self, self.namespace.command)()
         else:
-            aprint("You don't call any command")
+            print(
+                attention_text(
+                    "You don't call any command",
+                ),
+            )
             exit(1)
