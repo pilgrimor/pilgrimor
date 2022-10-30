@@ -1,6 +1,7 @@
 import sys
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
+from pilgrimor.abc.engine import PilgrimoreEngine
 from pilgrimor.utils import error_text
 
 try:
@@ -9,7 +10,7 @@ except ImportError:
     sys.exit(error_text("You must install psycopg, psycopg-c and psycopg-binary."))
 
 
-class PostgreSQLEngine:
+class PostgreSQLEngine(PilgrimoreEngine):
     """
     Engine to execute sql quries.
 
@@ -41,7 +42,7 @@ class PostgreSQLEngine:
     def execute_sql_with_return(
         self,
         sql_query: str,
-        sql_query_params: Tuple[Any],
+        sql_query_params: Optional[List[Any]] = None,
         in_transaction: Optional[bool] = True,
     ) -> Optional[List[Any]]:
         """
@@ -72,7 +73,7 @@ class PostgreSQLEngine:
     def execute_sql_no_return(
         self,
         sql_query: str,
-        sql_query_params: Tuple[Any],
+        sql_query_params: Optional[List[Any]] = None,
         in_transaction: Optional[bool] = True,
     ) -> None:
         """

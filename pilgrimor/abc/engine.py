@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
 
 class PilgrimoreEngine(ABC):
@@ -37,7 +37,7 @@ class PilgrimoreEngine(ABC):
     def execute_sql_with_return(
         self,
         sql_query: str,
-        sql_query_params: Tuple[Any],
+        sql_query_params: Optional[List[Any]] = None,
         in_transaction: Optional[bool] = True,
     ) -> Optional[List[Any]]:
         """
@@ -49,14 +49,14 @@ class PilgrimoreEngine(ABC):
         :param sql_query_params: parameters for sql query.
         :param in_transaction: execute in transaction or not.
 
-        :return: None or list with results.
+        :return: list with results.
         """
 
     @abstractmethod
     def execute_sql_no_return(
         self,
         sql_query: str,
-        sql_query_params: Tuple[Any],
+        sql_query_params: Optional[List[Any]] = None,
         in_transaction: Optional[bool] = True,
     ) -> None:
         """

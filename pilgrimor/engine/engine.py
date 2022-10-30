@@ -23,9 +23,9 @@ def get_engine(settings: PilgrimorSettings) -> PilgrimoreEngine:  # noqa: C901
     :returns: SQL engine.
     """
     if engine := engines_map.get(settings.database_engine):
-        return engine
+        return engine  # type: ignore
 
-    engine = entry_points().get("pilgrimor_engine")
+    engine = entry_points().get("pilgrimor_engine")  # type: ignore
 
     if not engine:
         sys.exit("You set %s database engine, but do not install it.")

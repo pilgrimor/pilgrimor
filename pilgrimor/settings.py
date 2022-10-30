@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Dict
 
 import tomlkit
 from dotenv import dotenv_values
@@ -19,7 +20,7 @@ class PilgrimorSettings(BaseSettings):
     migrator_cli: str = "RAW"
 
     @classmethod
-    def new(cls):  # noqa: C901
+    def new(cls) -> "PilgrimorSettings":  # noqa: C901, WPS210
         """
         Create new instance of Settings.
 
@@ -33,10 +34,11 @@ class PilgrimorSettings(BaseSettings):
         except Exception:
             sys.exit("Can't find pyproject.toml.")
 
+        pyproject_toml = tomlkit.parse(raw_poetry_settings)
         try:
-            pilgrimor_settings = tomlkit.parse(
-                raw_poetry_settings,
-            )["tool"]["pilgrimor"]
+            pilgrimor_settings: Dict[str, str] = pyproject_toml["tool"][  # type: ignore
+                "pilgrimor"
+            ]
         except KeyError:
             sys.exit(error_text("Can't find pyproject.toml."))
 
@@ -49,13 +51,12 @@ class PilgrimorSettings(BaseSettings):
                 ),
             )
 
-        try:
-            pilgrimor_settings["database_url"] = config["PILGRIMOR_DATABASE_URL"]
-        except KeyError:
+        if not (db_url := config.get("PILGRIMOR_DATABASE_URL")):
             sys.exit(
                 error_text(
                     "Can't get PILGRIMOR_DATABASE_URL from .env file.",
                 ),
             )
+        pilgrimor_settings["database_url"] = db_url
 
         return PilgrimorSettings(**pilgrimor_settings)

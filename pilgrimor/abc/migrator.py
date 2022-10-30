@@ -1,6 +1,6 @@
 import sys
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pilgrimor.abc.engine import PilgrimoreEngine
 from pilgrimor.utils import success_text
@@ -41,14 +41,14 @@ class BaseMigrator(ABC):
 
         :param version: version for new migrations.
         """
-        to_apply_migrations = []
-
-        if not version:
-            to_apply_migrations = self._get_exist_migrations()
         if version:
-            to_apply_migrations = self._get_migrations_with_version(version=version)
-
-        self.run_migrations(to_apply_migrations, version)
+            self.run_migrations(
+                self._get_migrations_with_version(version=version),
+                version,
+            )
+        else:
+            for m_version, migrations in self._get_exist_migrations().items():
+                self.run_migrations(migrations, m_version)
 
     def rollback_migrations(
         self,
@@ -75,9 +75,12 @@ class BaseMigrator(ABC):
         if latest:
             to_rollback_migations = self._get_last_applied_migrations()
 
-        self.run_migrations(to_rollback_migations)
+        self.run_migrations(
+            migrations=to_rollback_migations,
+            apply=False,
+        )
 
-    def run_migrations(
+    def run_migrations(  # noqa: C901
         self,
         migrations: List[str],
         version: Optional[str] = None,
@@ -94,27 +97,64 @@ class BaseMigrator(ABC):
         :param apply: to apply or not.
         """
         if apply:
-            to_run_func = self._apply_migration
             command = "apply"
         else:
-            to_run_func = self._rollback_migration
             command = "rollback"
-        success_migrations = []
+        success_migrations: List[str] = []
 
         for migration in migrations:
             try:
-                to_run_func(migration=migration, version=version)
-                print(success_text(f"Command {command} done for {migration}"))
-                success_migrations.append(migration)
+                if apply and version:
+                    self._apply_migration(migration=migration, version=version)
+                elif not apply:
+                    self._rollback_migration(migration=migration)
             except Exception as exc:
                 not_applied_migrations = set(migrations) - set(success_migrations)
                 sys.exit(
                     f"Can't {command} migrations {not_applied_migrations} because "
                     f"there is error - {exc}",
                 )
+            print(success_text(f"Command {command} done for {migration}"))
+            success_migrations.append(migration)
 
     @abstractmethod
-    def _get_exist_migrations(self) -> List[str]:
+    def _apply_migration(self, migration: str, version: str) -> None:
+        """
+        Applies new migration.
+
+        Get migration text from migration, try to get
+        apply context, if not found, use all migration
+        as apply context.
+
+        Add system query into migration query.
+
+        After success migration add migration version to
+        the migration file.
+        If any exception is raised, rollback applied migration
+        and stop the migrator.
+
+        :param migration: migration to apply.
+        :param version: migration version.
+        """
+
+    @abstractmethod
+    def _rollback_migration(  # noqa: WPS324
+        self,
+        migration: str,
+    ) -> None:
+        """
+        Rolls back migration.
+
+        Get migration text from migration, try to get
+        rollback context, if not found, do not rollback migration.
+
+        :param migration: migration to apply.
+
+        :returns: None.
+        """
+
+    @abstractmethod
+    def _get_exist_migrations(self) -> Dict[str, List[str]]:
         """
         Returns migrations with a known version.
 
@@ -126,7 +166,7 @@ class BaseMigrator(ABC):
 
         :raises IncorrectMigrationHistoryError: if incorrect migration history.
 
-        :returns: list of migrations with known versions.
+        :returns: Dict with keys as version and value as list of migrations.
         """
 
     @abstractmethod

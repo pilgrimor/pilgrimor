@@ -19,7 +19,7 @@ class BaseCLI:
         """
         self.namespace: Namespace = namespace
 
-    def __call__(self):
+    def __call__(self) -> None:
         """
         Makes class callable.
 
@@ -34,18 +34,16 @@ class BaseCLI:
                 and not command_name.startswith("_")
             ]
             if self.namespace.command not in available_commands:
-                print(
+                exit(
                     error_text(
                         f"Can't find {self.namespace.command}.",
                     ),
                 )
-                exit(1)
 
             getattr(self, self.namespace.command)()
         else:
-            print(
+            exit(
                 attention_text(
                     "You don't call any command",
                 ),
             )
-            exit(1)

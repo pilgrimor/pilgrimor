@@ -16,16 +16,12 @@ def get_parse_args() -> Namespace:
 
     commands.add_parser(
         "initdb",
-        help=(
-            "Initialize you database."
-        ),
+        help=("Initialize you database."),
     )
 
     migrate_parser = commands.add_parser(
         "apply",
-        help=(
-            "Apply new migrations."
-        ),
+        help=("Apply new migrations."),
     )
     migrate_parser.add_argument(
         "--version",
@@ -35,9 +31,7 @@ def get_parse_args() -> Namespace:
 
     downgrade_command = commands.add_parser(
         "rollback",
-        help=(
-            "Rollback migrations."
-        ),
+        help=("Rollback migrations."),
     )
     downgrade_command.add_argument(
         "--version",
@@ -47,9 +41,7 @@ def get_parse_args() -> Namespace:
     downgrade_command.add_argument(
         "--latest",
         action="store_true",
-        help=(
-            "Downgrade last applied version."
-        ),
+        help=("Downgrade last applied version."),
     )
 
     return parser.parse_args()

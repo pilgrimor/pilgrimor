@@ -2,7 +2,7 @@ import re
 from os import listdir
 from os.path import isfile, join
 from pathlib import Path
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from packaging.version import parse as version_parse
 
@@ -36,7 +36,7 @@ class RawSQLMigator(BaseMigrator):
         """
         self.engine.execute_sql_no_return(
             sql_query=query,
-            sql_query_params=(),
+            sql_query_params=None,
         )
         print(success_text("Database initialized!"))
 
@@ -78,9 +78,9 @@ class RawSQLMigator(BaseMigrator):
         if not (to_apply_migrations := self._get_to_apply_migrations()):
             raise NoNewMigrationsError("There are no new migrations to apply.")
 
-        return to_apply_migrations
+        return list(to_apply_migrations)
 
-    def _get_exist_migrations(self) -> List[str]:  # noqa: WPS210
+    def _get_exist_migrations(self) -> Dict[str, List[str]]:  # noqa: WPS210
         """
         Returns migrations with a known version.
 
@@ -96,11 +96,11 @@ class RawSQLMigator(BaseMigrator):
 
         :raises IncorrectMigrationHistoryError: if incorrect migration history.
 
-        :returns: list of migrations with known versions.
+        :returns: Dict with keys as version and value as list of migrations.
         """
         all_migrations = self._get_migration_files()
         is_previous_migration_has_version = True
-        to_apply_migration = []
+        to_apply_migration: Dict[str, List[str]] = {}
 
         for migration in all_migrations:
             full_path_migration = join(self.migrations_dir, migration)
@@ -119,7 +119,10 @@ class RawSQLMigator(BaseMigrator):
                     migration_version = search_result.group().split(
                         " ",
                     )[1]
-                    to_apply_migration.append((migration, migration_version))
+                    to_apply_migration.setdefault(
+                        migration_version,
+                        [],
+                    ).append(migration)
                     is_previous_migration_has_version = True
                 else:
                     is_previous_migration_has_version = False
@@ -185,7 +188,7 @@ class RawSQLMigator(BaseMigrator):
 
         self.engine.execute_sql_no_return(
             sql_query=to_execute_query,
-            sql_query_params=(),
+            sql_query_params=None,
         )
         if query.find("pilgrimore_version") == -1:
             try:
@@ -241,12 +244,12 @@ class RawSQLMigator(BaseMigrator):
 
         self.engine.execute_sql_no_return(
             sql_query=to_execute_query,
-            sql_query_params=(),
+            sql_query_params=None,
         )
 
         return None
 
-    def _get_to_apply_migrations(self) -> Set[str]:
+    def _get_to_apply_migrations(self) -> List[str]:
         """
         Gets new migrations.
 
@@ -293,10 +296,11 @@ class RawSQLMigator(BaseMigrator):
         FROM pilgrimor
         """
 
-        return self.engine.execute_sql_with_return(
+        query_result = self.engine.execute_sql_with_return(
             sql_query=query,
-            sql_query_params=(),
+            sql_query_params=None,
         )
+        return query_result if query_result else []
 
     def _get_last_applied_migrations(self) -> List[str]:
         """
@@ -317,10 +321,13 @@ class RawSQLMigator(BaseMigrator):
 
         migrations = self.engine.execute_sql_with_return(
             sql_query=query,
-            sql_query_params=(),
+            sql_query_params=None,
         )
 
-        return self._sort_migrations(migrations, desc=True)
+        return self._sort_migrations(
+            migrations if migrations else [],
+            desc=True,
+        )
 
     def _get_migrations_by_version(self, version: str) -> List[str]:
         """
@@ -345,10 +352,13 @@ class RawSQLMigator(BaseMigrator):
 
         result = self.engine.execute_sql_with_return(
             sql_query=query,
-            sql_query_params=(version, version),
+            sql_query_params=[version, version],
         )
 
-        return self._sort_migrations(result, desc=True)
+        return self._sort_migrations(
+            result if result else [],
+            desc=True,
+        )
 
     def _is_version_exists(self, version: str) -> bool:
         """
@@ -365,11 +375,11 @@ class RawSQLMigator(BaseMigrator):
             WHERE version = %s
         )
         """
-        result: List[bool] = self.engine.execute_sql_with_return(
+        result: Optional[List[bool]] = self.engine.execute_sql_with_return(
             sql_query=query,
-            sql_query_params=(version,),
+            sql_query_params=[version],
         )
-        return result[0]
+        return result[0] if result else False
 
     def _is_version_bigger_exists(
         self,
@@ -393,7 +403,7 @@ class RawSQLMigator(BaseMigrator):
         """
         versions = self.engine.execute_sql_with_return(
             sql_query=query,
-            sql_query_params=(),
+            sql_query_params=None,
         )
         if versions:
             return tuple(
@@ -433,7 +443,7 @@ class RawSQLMigator(BaseMigrator):
 
     def _sort_migrations(
         self,
-        migrations: Set[str],
+        migrations: Iterable[str],
         desc: bool = False,
     ) -> List[str]:
         """
