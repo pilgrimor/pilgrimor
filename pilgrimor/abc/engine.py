@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class PilgrimoreEngine(ABC):
@@ -53,18 +53,18 @@ class PilgrimoreEngine(ABC):
         """
 
     @abstractmethod
-    def execute_sql_no_return(
+    def execute_sql_with_not_return(
         self,
-        sql_query: str,
+        version_migrations: List[Dict[str, str]],
         sql_query_params: Optional[List[Any]] = None,
-        in_transaction: Optional[bool] = True,
+        in_transaction: bool = True,
     ) -> None:
         """
-        Executes sql query and do not return any output.
+        Executes all migrations sql queries and do not return any output.
 
         By default query must be executed in transaction.
 
-        :param sql_query: sql query to execute.
+        :param version_migrations: sql queries dict by migrations.
         :param sql_query_params: parameters for sql query.
         :param in_transaction: execute in transaction or not.
         """

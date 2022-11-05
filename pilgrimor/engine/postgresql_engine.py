@@ -1,7 +1,10 @@
 import sys
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
+
+from psycopg.rows import Row
 
 from pilgrimor.abc.engine import PilgrimoreEngine
+from pilgrimor.exceptions import ApplyMigrationsError
 from pilgrimor.utils import error_text
 
 try:
@@ -70,29 +73,71 @@ class PostgreSQLEngine(PilgrimoreEngine):
 
         return self._form_result(result=result)
 
-    def execute_sql_no_return(
+    def execute_sql_with_not_return(
         self,
-        sql_query: str,
+        version_migrations: List[Dict[str, str]],
         sql_query_params: Optional[List[Any]] = None,
-        in_transaction: Optional[bool] = True,
+        in_transaction: bool = True,
     ) -> None:
         """
-        Executes sql query and do not return any output.
+        Executes all migrations sql queries and do not return any output.
 
-        :param sql_query: sql query to execute.
+        :param version_migrations: sql queries dict by migrations.
         :param sql_query_params: parameters for sql query.
         :param in_transaction: execute in transaction or not.
         """
         autocommit = False
         if not in_transaction:
             autocommit = True
-
         with psycopg.connect(self.database_url, autocommit=autocommit) as connection:
             with connection.cursor() as cursor:
+                for migration in version_migrations:
+                    self._execute_migration_operations(
+                        connection,
+                        cursor,
+                        in_transaction,
+                        migration,
+                        sql_query_params,
+                    )
+                connection.commit()
+
+    def _execute_migration_operations(
+        self,
+        connection: psycopg.Connection[Row],
+        cursor: psycopg.Cursor[Row],
+        in_transaction: bool,
+        migration: Dict[str, str],
+        sql_query_params: Optional[List[Any]] = None,
+    ) -> None:
+        """
+        Executes all operation sql queries in one migration.
+
+        :param connection: psycopg driver connection
+        :param cursor: psycopg driver cursir
+        :param migration: migrations sql queries dict.
+        :param sql_query_params: parameters for sql query.
+        :param in_transaction: execute in transaction or not.
+
+        :raises ApplyMigrationsError: error in migration query.
+        """
+        migration_queries = migration["query"].split(";")
+        for query in migration_queries:
+            try:
                 cursor.execute(
-                    query=sql_query,
+                    query=query,
                     params=sql_query_params,
                 )
+                print(f"migration: {migration['migration']} - OK")
+            except (Exception, psycopg.DatabaseError) as error:
+                print(
+                    f"Error in {migration['migration']}, it not be applied",
+                    error,
+                )
+                if not in_transaction:
+                    continue
+                print("All version migrations will be rollback")
+                connection.rollback()
+                raise ApplyMigrationsError
 
     def _form_result(self, result: Any) -> Optional[List[Any]]:
         """

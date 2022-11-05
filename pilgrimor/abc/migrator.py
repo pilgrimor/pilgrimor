@@ -100,25 +100,20 @@ class BaseMigrator(ABC):
             command = "apply"
         else:
             command = "rollback"
-        success_migrations: List[str] = []
 
-        for migration in migrations:
-            try:
-                if apply and version:
-                    self._apply_migration(migration=migration, version=version)
-                elif not apply:
-                    self._rollback_migration(migration=migration)
-            except Exception as exc:
-                not_applied_migrations = set(migrations) - set(success_migrations)
-                sys.exit(
-                    f"Can't {command} migrations {not_applied_migrations} because "
-                    f"there is error - {exc}",
-                )
-            print(success_text(f"Command {command} done for {migration}"))
-            success_migrations.append(migration)
+        try:
+            if apply and version:
+                self._apply_migrations(migrations=migrations, version=version)
+            elif not apply:
+                self._rollback_migrations(migrations=migrations)
+        except Exception as exc:
+            sys.exit(
+                f"Can't {command} migrations because there is error - {exc}",
+            )
+        print(success_text(f"Command {command} done."))
 
     @abstractmethod
-    def _apply_migration(self, migration: str, version: str) -> None:
+    def _apply_migrations(self, migrations: List[str], version: str) -> None:
         """
         Applies new migration.
 
@@ -133,14 +128,14 @@ class BaseMigrator(ABC):
         If any exception is raised, rollback applied migration
         and stop the migrator.
 
-        :param migration: migration to apply.
+        :param migrations: List of migration.
         :param version: migration version.
         """
 
     @abstractmethod
-    def _rollback_migration(  # noqa: WPS324
+    def _rollback_migrations(  # noqa: WPS324
         self,
-        migration: str,
+        migrations: List[str],
     ) -> None:
         """
         Rolls back migration.
@@ -148,7 +143,7 @@ class BaseMigrator(ABC):
         Get migration text from migration, try to get
         rollback context, if not found, do not rollback migration.
 
-        :param migration: migration to apply.
+        :param migrations: List of migration.
 
         :returns: None.
         """

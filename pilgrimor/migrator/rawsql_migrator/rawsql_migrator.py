@@ -8,6 +8,7 @@ from packaging.version import parse as version_parse
 
 from pilgrimor.abc.migrator import BaseMigrator
 from pilgrimor.exceptions import (
+    ApplyMigrationsError,
     BiggerVersionsExistsError,
     IncorrectMigrationHistoryError,
     MigrationNumberRepeatNumberError,
@@ -34,7 +35,7 @@ class RawSQLMigator(BaseMigrator):
             version VARCHAR(25) NOT NULL
         )
         """
-        self.engine.execute_sql_no_return(
+        self.engine.execute_sql_with_return(
             sql_query=query,
             sql_query_params=None,
         )
@@ -147,80 +148,13 @@ class RawSQLMigator(BaseMigrator):
 
         return self._get_migrations_by_version(version=version)
 
-    def _apply_migration(self, migration: str, version: str) -> None:
+    def _get_rollback_migration_query(self, migration: str) -> str:
         """
-        Applies new migration.
+        Return full rollback migration query with technical tablr recird.
 
-        Get migration text from migration, try to get
-        apply context, if not found, use all migration
-        as apply context.
+        :param migration: rollback migration.
 
-        Add system query into migration query.
-
-        After success migration add migration version to
-        the migration file.
-        If any exception is raised, rollback applied migration
-        and stop the migrator.
-
-        :param migration: migration to apply.
-        :param version: migration version.
-        """
-        query = Path(
-            join(self.migrations_dir, migration),
-        ).read_text()
-
-        try:
-            apply_query = query.split("-- rollback --")[0]
-        except KeyError:
-            print(
-                warning_text(
-                    f"You don't split apply and rollback context in migration "
-                    f"{migration}. All commands will be applied.",
-                ),
-            )
-            apply_query = query
-
-        to_execute_query = self._add_migration_to_system_table(
-            apply_query,
-            migration,
-            version,
-        )
-
-        self.engine.execute_sql_no_return(
-            sql_query=to_execute_query,
-            sql_query_params=None,
-        )
-        if query.find("pilgrimore_version") == -1:
-            try:
-                self._add_version_to_migration_file(
-                    migration=migration,
-                    version=version,
-                )
-            except Exception as exc:
-                print(
-                    error_text(
-                        f"Can't set version in migration file\n"
-                        f"Rolling back migration {migration}\n"
-                        f"Reason - {exc}",
-                    ),
-                )
-                self._rollback_migration(migration=migration)
-
-    def _rollback_migration(  # noqa: WPS324
-        self,
-        migration: str,
-        **kwargs: Any,
-    ) -> None:
-        """
-        Rolls back migration.
-
-        Get migration text from migration, try to get
-        rollback context, if not found, do not rollback migration.
-
-        :param migration: migration to apply.
-        :param kwargs: any named arguments.
-
-        :returns: None.
+        :returns: full migration query.
         """
         query = Path(
             join(self.migrations_dir, migration),
@@ -235,19 +169,143 @@ class RawSQLMigator(BaseMigrator):
                     f"Can't rollback this migration.",
                 ),
             )
-            return None
-
-        to_execute_query = self._drop_migration_from_system_table(
+            return ""
+        return self._drop_migration_from_system_table(
             rollback_query,
             migration,
         )
 
-        self.engine.execute_sql_no_return(
-            sql_query=to_execute_query,
-            sql_query_params=None,
+    def _get_apply_migration_query(
+        self,
+        migration: str,
+        version: str,
+    ) -> str:
+        """
+        Return full aooly migration query with technical tablr recird.
+
+        :param migration: rollback migration.
+        :param version: migration version.
+
+        :returns: full migration query.
+        """
+        query = Path(
+            join(self.migrations_dir, migration),
+        ).read_text()
+        try:
+            apply_query = query.split("-- rollback --")[0]
+        except KeyError:
+            print(
+                warning_text(
+                    f"You don't split apply and rollback context in migration "
+                    f"{migration}. All commands will be applied.",
+                ),
+            )
+            apply_query = query
+        return self._add_migration_to_system_table(
+            apply_query,
+            migration,
+            version,
         )
 
-        return None
+    def _get_version_migrations(  # noqa: WPS234
+        self,
+        migrations: List[str],
+        is_rollback: bool,
+        version: str = "",
+    ) -> Tuple[List[Dict[str, str]], bool]:
+        """
+        Confirm list with migrations data.
+
+        :param is_rollback: rollback or apply migrations.
+        :param migrations: List of migration to apply.
+        :param version: migration version.
+        :returns: list of dicts with migrations and in_transaction flag.
+        """
+        version_migrations = []
+        in_transaction = True
+        for migration in migrations:
+            if is_rollback:
+                to_execute_query = self._get_rollback_migration_query(migration)
+                if not to_execute_query:
+                    continue
+            else:
+                to_execute_query = self._get_apply_migration_query(migration, version)
+
+            if "concurrently" in to_execute_query:
+                in_transaction = False
+
+            version_migrations.append(
+                {
+                    "migration": migration,
+                    "query": to_execute_query,
+                },
+            )
+        return version_migrations, in_transaction
+
+    def _apply_migrations(self, migrations: List[str], version: str) -> None:
+        """
+        Applies new migrations.
+
+        Get migration text from migration, try to get
+        apply context, if not found, use all migration
+        as apply context.
+
+        Add system query into migration query.
+
+        After success migration add migration version to
+        the migration file.
+        If any exception is raised, rollback applied migration
+        and stop the migrator.
+
+        :param migrations: List of migration to apply.
+        :param version: migration version.
+        """
+        version_migrations, in_transaction = self._get_version_migrations(
+            migrations,
+            is_rollback=False,
+            version=version,
+        )
+
+        try:
+            self.engine.execute_sql_with_not_return(
+                version_migrations=version_migrations,
+                sql_query_params=None,
+                in_transaction=in_transaction,
+            )
+        except ApplyMigrationsError:
+            return
+
+        self._add_version_to_migration_file(
+            migrations=migrations,
+            version=version,
+        )
+
+    def _rollback_migrations(  # noqa: WPS324
+        self,
+        migrations: List[str],
+        **kwargs: Any,
+    ) -> None:
+        """
+        Rolls back migration.
+
+        Get migration text from migration, try to get
+        rollback context, if not found, do not rollback migration.
+
+        :param migrations: List of migration to apply.
+        :param kwargs: any named arguments.
+        """
+        version_migrations, in_transaction = self._get_version_migrations(
+            migrations,
+            is_rollback=True,
+        )
+        try:
+            self.engine.execute_sql_with_not_return(
+                version_migrations=version_migrations,
+                sql_query_params=None,
+                in_transaction=in_transaction,
+            )
+        except ApplyMigrationsError:
+            return
 
     def _get_to_apply_migrations(self) -> List[str]:
         """
@@ -500,15 +558,34 @@ class RawSQLMigator(BaseMigrator):
         """
         return "{0}{1}{2}".format(query, "\n", system_command)
 
-    def _add_version_to_migration_file(self, migration: str, version: str) -> None:
+    def _add_version_to_migration_file(
+        self,
+        migrations: List[str],
+        version: str,
+    ) -> None:
         """
         Adds migration version to migration file.
 
-        :param migration: migration.
+        :param migrations: List of migration to apply.
         :param version: migration version.
         """
-        path_to_migration = join(self.migrations_dir, migration)
-        with open(path_to_migration, "a") as migration_file:
-            migration_file.write(
-                f"\n-- pilgrimore_version {version} -- \n",
-            )
+        for migration in migrations:
+            query = Path(
+                join(self.migrations_dir, migration),
+            ).read_text()
+            if query.find("pilgrimore_version") == -1:
+                try:
+                    path_to_migration = join(self.migrations_dir, migration)
+                    with open(path_to_migration, "a") as migration_file:
+                        migration_file.write(  # noqa: WPS220
+                            f"\n-- pilgrimore_version {version} -- \n",
+                        )
+                except Exception as exc:
+                    print(
+                        error_text(
+                            f"Can't set version in migration file\n"
+                            f"Rolling back migrations {migrations}\n"
+                            f"Reason - {exc}",
+                        ),
+                    )
+                    self._rollback_migrations(migrations=migrations)
