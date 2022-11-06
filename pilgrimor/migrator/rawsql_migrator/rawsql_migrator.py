@@ -35,7 +35,7 @@ class RawSQLMigator(BaseMigrator):
             version VARCHAR(25) NOT NULL
         )
         """
-        self.engine.execute_sql_with_return(
+        self.engine.execute_sql_with_no_return(
             sql_query=query,
             sql_query_params=None,
         )
@@ -219,10 +219,10 @@ class RawSQLMigator(BaseMigrator):
         :param is_rollback: rollback or apply migrations.
         :param migrations: List of migration to apply.
         :param version: migration version.
-        :returns: list of dicts with migrations and in_transaction flag.
+        :returns: list of dicts with migrations and is_concurrently flag.
         """
         version_migrations = []
-        in_transaction = True
+        is_concurrently = False
         for migration in migrations:
             if is_rollback:
                 to_execute_query = self._get_rollback_migration_query(migration)
@@ -232,7 +232,7 @@ class RawSQLMigator(BaseMigrator):
                 to_execute_query = self._get_apply_migration_query(migration, version)
 
             if "concurrently" in to_execute_query:
-                in_transaction = False
+                is_concurrently = True
 
             version_migrations.append(
                 {
@@ -240,7 +240,7 @@ class RawSQLMigator(BaseMigrator):
                     "query": to_execute_query,
                 },
             )
-        return version_migrations, in_transaction
+        return version_migrations, is_concurrently
 
     def _apply_migrations(self, migrations: List[str], version: str) -> None:
         """
@@ -260,17 +260,17 @@ class RawSQLMigator(BaseMigrator):
         :param migrations: List of migration to apply.
         :param version: migration version.
         """
-        version_migrations, in_transaction = self._get_version_migrations(
+        version_migrations, is_concurrently = self._get_version_migrations(
             migrations,
             is_rollback=False,
             version=version,
         )
 
         try:
-            self.engine.execute_sql_with_not_return(
+            self.engine.execute_version_migrations(
                 version_migrations=version_migrations,
                 sql_query_params=None,
-                in_transaction=in_transaction,
+                in_transaction=not is_concurrently,
             )
         except ApplyMigrationsError:
             return
@@ -294,15 +294,15 @@ class RawSQLMigator(BaseMigrator):
         :param migrations: List of migration to apply.
         :param kwargs: any named arguments.
         """
-        version_migrations, in_transaction = self._get_version_migrations(
+        version_migrations, is_concurrently = self._get_version_migrations(
             migrations,
             is_rollback=True,
         )
         try:
-            self.engine.execute_sql_with_not_return(
+            self.engine.execute_version_migrations(
                 version_migrations=version_migrations,
                 sql_query_params=None,
-                in_transaction=in_transaction,
+                in_transaction=not is_concurrently,
             )
         except ApplyMigrationsError:
             return

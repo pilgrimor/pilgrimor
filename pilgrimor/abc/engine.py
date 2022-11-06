@@ -53,7 +53,24 @@ class PilgrimoreEngine(ABC):
         """
 
     @abstractmethod
-    def execute_sql_with_not_return(
+    def execute_sql_with_no_return(
+        self,
+        sql_query: str,
+        sql_query_params: Optional[List[Any]] = None,
+        in_transaction: Optional[bool] = True,
+    ) -> None:
+        """
+        Executes sql query.
+
+        By default query must be executed in transaction.
+
+        :param sql_query: sql query to execute.
+        :param sql_query_params: parameters for sql query.
+        :param in_transaction: execute in transaction or not.
+        """
+
+    @abstractmethod
+    def execute_version_migrations(
         self,
         version_migrations: List[Dict[str, str]],
         sql_query_params: Optional[List[Any]] = None,
