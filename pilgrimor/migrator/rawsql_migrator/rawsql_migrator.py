@@ -8,7 +8,6 @@ from packaging.version import parse as version_parse
 
 from pilgrimor.abc.migrator import BaseMigrator
 from pilgrimor.exceptions import (
-    ApplyMigrationsError,
     BiggerVersionsExistsError,
     IncorrectMigrationHistoryError,
     MigrationNumberRepeatNumberError,
@@ -231,7 +230,7 @@ class RawSQLMigator(BaseMigrator):
             else:
                 to_execute_query = self._get_apply_migration_query(migration, version)
 
-            if "concurrently" in to_execute_query:
+            if "concurrently" in to_execute_query.lower():
                 is_concurrently = True
 
             version_migrations.append(
@@ -266,14 +265,11 @@ class RawSQLMigator(BaseMigrator):
             version=version,
         )
 
-        try:
-            self.engine.execute_version_migrations(
-                version_migrations=version_migrations,
-                sql_query_params=None,
-                in_transaction=not is_concurrently,
-            )
-        except ApplyMigrationsError:
-            return
+        self.engine.execute_version_migrations(
+            version_migrations=version_migrations,
+            sql_query_params=None,
+            in_transaction=not is_concurrently,
+        )
 
         self._add_version_to_migration_file(
             migrations=migrations,
@@ -298,14 +294,12 @@ class RawSQLMigator(BaseMigrator):
             migrations,
             is_rollback=True,
         )
-        try:
-            self.engine.execute_version_migrations(
-                version_migrations=version_migrations,
-                sql_query_params=None,
-                in_transaction=not is_concurrently,
-            )
-        except ApplyMigrationsError:
-            return
+
+        self.engine.execute_version_migrations(
+            version_migrations=version_migrations,
+            sql_query_params=None,
+            in_transaction=not is_concurrently,
+        )
 
     def _get_to_apply_migrations(self) -> List[str]:
         """

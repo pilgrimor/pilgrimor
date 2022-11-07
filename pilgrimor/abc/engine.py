@@ -81,7 +81,7 @@ class PilgrimoreEngine(ABC):
 
         By default query must be executed in transaction.
 
-        :param version_migrations: sql queries dict by migrations.
+        :param version_migrations: list of dicts with migration data for single version.
         :param sql_query_params: parameters for sql query.
         :param in_transaction: execute in transaction or not.
         """

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
 from pilgrimor.abc.engine import PilgrimoreEngine
+from pilgrimor.exceptions import ApplyMigrationsError
 from pilgrimor.utils import success_text
 
 
@@ -100,16 +101,13 @@ class BaseMigrator(ABC):
             command = "apply"
         else:
             command = "rollback"
-
         try:
             if apply and version:
                 self._apply_migrations(migrations=migrations, version=version)
             elif not apply:
                 self._rollback_migrations(migrations=migrations)
-        except Exception as exc:
-            sys.exit(
-                f"Can't {command} migrations because there is error - {exc}",
-            )
+        except ApplyMigrationsError as err:
+            sys.exit(err)
         print(success_text(f"Command {command} done."))
 
     @abstractmethod

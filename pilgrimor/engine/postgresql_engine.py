@@ -165,10 +165,7 @@ class PostgreSQLEngine(PilgrimoreEngine):
                     params=sql_query_params,
                 )
             except (Exception, psycopg.DatabaseError) as error:
-                print(
-                    f"Error in {migration['migration']}, it not be applied",
-                    error,
-                )
+                print(f"{migration['migration']}, it not be applied", error)
                 if not in_transaction:
                     continue
                 print("All version migrations will be rollback")
