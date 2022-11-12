@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 from psycopg.rows import Row
 
 from pilgrimor.abc.engine import PilgrimoreEngine
-from pilgrimor.exceptions import ApplyMigrationsError
 from pilgrimor.utils import error_text
 
 try:
@@ -155,7 +154,7 @@ class PostgreSQLEngine(PilgrimoreEngine):
         :param sql_query_params: parameters for sql query.
         :param in_transaction: execute in transaction or not.
 
-        :raises ApplyMigrationsError: error in migration query.
+        :raises Exception: error in migration query.
         """
         migration_queries = migration["query"].split(";")
         for query in migration_queries:
@@ -169,7 +168,7 @@ class PostgreSQLEngine(PilgrimoreEngine):
                 if not in_transaction:
                     continue
                 print("All version migrations will be rollback")
-                raise ApplyMigrationsError
+                raise error
 
     def _form_result(self, result: Any) -> Optional[List[Any]]:
         """

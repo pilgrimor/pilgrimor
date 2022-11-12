@@ -1,4 +1,3 @@
-import sys
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
@@ -96,6 +95,8 @@ class BaseMigrator(ABC):
         :param migrations: List of migration.
         :param version: migration version.
         :param apply: to apply or not.
+
+        :raises ApplyMigrationsError: error in migrations.
         """
         if apply:
             command = "apply"
@@ -106,8 +107,8 @@ class BaseMigrator(ABC):
                 self._apply_migrations(migrations=migrations, version=version)
             elif not apply:
                 self._rollback_migrations(migrations=migrations)
-        except ApplyMigrationsError as err:
-            sys.exit(err)
+        except Exception as exc:
+            raise ApplyMigrationsError from exc
         print(success_text(f"Command {command} done."))
 
     @abstractmethod
