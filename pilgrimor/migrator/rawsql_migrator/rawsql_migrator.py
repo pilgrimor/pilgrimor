@@ -149,7 +149,7 @@ class RawSQLMigator(BaseMigrator):
 
     def _get_rollback_migration_query(self, migration: str) -> str:
         """
-        Return full rollback migration query with technical tablr recird.
+        Return full rollback migration query with technical table record.
 
         :param migration: rollback migration.
 
@@ -180,7 +180,7 @@ class RawSQLMigator(BaseMigrator):
         version: str,
     ) -> str:
         """
-        Return full aooly migration query with technical tablr recird.
+        Return full apply migration query with technical table record.
 
         :param migration: rollback migration.
         :param version: migration version.
