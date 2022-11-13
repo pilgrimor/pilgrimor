@@ -71,7 +71,7 @@ class RawSQLMigator(BaseMigrator):
             )
         if bigger_versions := self._is_version_bigger_exists(version=version):
             raise BiggerVersionsExistsError(
-                f"There are bigger versions - {', '.join(bigger_versions)}"
+                f"There are bigger versions - {', '.join(bigger_versions)} \n"
                 f"Please choose another version.",
             )
 
