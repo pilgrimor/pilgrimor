@@ -18,6 +18,7 @@ class PilgrimorSettings(BaseSettings):
     database_engine: str = "PSQL"
     database_url: str = "postgres://pilgrimor:pilgrimor@localhost:5432/pilgrimor"
     migrator_cli: str = "RAW"
+    project_version: str = ""
 
     @classmethod
     def new(cls) -> "PilgrimorSettings":  # noqa: C901, WPS210
@@ -41,6 +42,13 @@ class PilgrimorSettings(BaseSettings):
             ]
         except KeyError:
             sys.exit(error_text("Can't find pyproject.toml."))
+
+        try:
+            pilgrimor_settings["project_version"] = pyproject_toml[  # type: ignore
+                "tool"
+            ]["poetry"]["version"]
+        except KeyError:
+            sys.exit(error_text("Can't find project version in pyproject.toml."))
 
         config = dotenv_values(pilgrimor_settings.pop("env_file"))
 

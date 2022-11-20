@@ -14,6 +14,7 @@ class RawSQLMigratorCLI(BaseCLI):
         namespace: Namespace,
         engine: PilgrimoreEngine,
         migrations_dir: str,
+        project_version: str,
     ) -> None:
         """
         Initialize the CLI.
@@ -21,12 +22,14 @@ class RawSQLMigratorCLI(BaseCLI):
         :param namespace: namespace with args from the command line.
         :param engine: sql engine.
         :param migrations_dir: directory with migrations.
+        :param project_version: project version from pyproject.toml.
         """
         self.namespace: Namespace = namespace
         self.migrator: RawSQLMigator = RawSQLMigator(
             engine,
             migrations_dir,
         )
+        self.project_version: str = project_version
 
     def apply(self) -> None:
         """

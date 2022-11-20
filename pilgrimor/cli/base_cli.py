@@ -11,13 +11,15 @@ class BaseCLI:
     the commands from the parser as methods.
     """
 
-    def __init__(self, namespace: Namespace) -> None:
+    def __init__(self, namespace: Namespace, project_version: str) -> None:
         """
         Initialize the CLI.
 
         :param namespace: namespace with arguments.
+        :param project_version: project version from pyproject.toml.
         """
         self.namespace: Namespace = namespace
+        self.project_version: str = project_version
 
     def __call__(self) -> None:
         """
@@ -39,7 +41,15 @@ class BaseCLI:
                         f"Can't find {self.namespace.command}.",
                     ),
                 )
-
+            if self.namespace.version:
+                if self.namespace.version != self.project_version:
+                    exit(
+                        error_text(
+                            f"Migration version: {self.namespace.version} "
+                            f"does not match the project version "
+                            f"in pyproject.toml: {self.project_version}.",
+                        ),
+                    )
             getattr(self, self.namespace.command)()
         else:
             exit(

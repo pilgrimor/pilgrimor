@@ -15,6 +15,7 @@ def main() -> None:
         namespace,
         engine,
         settings.migrations_dir,
+        settings.project_version,
     )
     cli()
 
