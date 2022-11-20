@@ -1,7 +1,4 @@
-import sys
 from argparse import Namespace
-
-import tomlkit
 
 from pilgrimor.utils import attention_text, error_text
 
@@ -14,13 +11,15 @@ class BaseCLI:
     the commands from the parser as methods.
     """
 
-    def __init__(self, namespace: Namespace) -> None:
+    def __init__(self, namespace: Namespace, project_version: str) -> None:
         """
         Initialize the CLI.
 
         :param namespace: namespace with arguments.
+        :param project_version: project version from pyproject.toml.
         """
         self.namespace: Namespace = namespace
+        self.project_version: str = project_version
 
     def __call__(self) -> None:
         """
@@ -43,13 +42,12 @@ class BaseCLI:
                     ),
                 )
             if self.namespace.version:
-                project_version = self._get_project_version()
-                if self.namespace.version != project_version:
+                if self.namespace.version != self.project_version:
                     exit(
                         error_text(
                             f"Migration version: {self.namespace.version} "
                             f"does not match the project version "
-                            f"in pyproject.toml: {project_version}.",
+                            f"in pyproject.toml: {self.project_version}.",
                         ),
                     )
             getattr(self, self.namespace.command)()
@@ -59,22 +57,3 @@ class BaseCLI:
                     "You don't call any command",
                 ),
             )
-
-    def _get_project_version(self) -> str:
-        """
-        Get project version fron pyproject.toml file.
-
-        :returns: string of project version.
-        """
-        try:
-            with open("pyproject.toml", "r") as pyproject_file:
-                raw_poetry_settings = pyproject_file.read()
-        except Exception:
-            sys.exit("Can't find pyproject.toml.")
-
-        pyproject_toml = tomlkit.parse(raw_poetry_settings)
-        try:
-            project_version: str = pyproject_toml["tool"]["poetry"]["version"]
-        except KeyError:
-            sys.exit(error_text("Can't find project version in pyproject.toml."))
-        return project_version
