@@ -3,6 +3,25 @@ name = "pilgrimor"
 version = "0.1.0"
 description = ""
 authors = ["Kiselev Aleksandr <askiselev00@gmail.com>"]
+maintainers = ["Pavel Kirilin <win10@list.ru>"]
+readme = "README.md"
+repository = "https://github.com/pilgrimor/pilgrimor"
+homepage = "https://github.com/pilgrimor/pilgrimor"
+documentation = "https://github.com/pilgrimor/pilgrimor"
+license = "LICENSE"
+classifiers = [
+    "Typing :: Typed",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: System :: Networking",
+    "Development Status :: 3 - Alpha",
+]
+keywords = ["pilgrimor", "migartions"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -28,9 +47,6 @@ pytest-cov = "^3.0.0"
 anyio = "^3.6.1"
 pytest-env = "^0.6.2"
 pytest-mock = "^3.8.2"
-
-[tool.poetry.scripts]
-pilgrimor = "pilgrimor.__main__:main"
 
 [tool.isort]
 profile = "black"
@@ -59,4 +75,5 @@ env_file = "./.env"
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-
+[tool.poetry.scripts]
+pilgrimor = "pilgrimor.__main__:main"
