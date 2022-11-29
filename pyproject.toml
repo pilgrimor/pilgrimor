@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pilgrimor"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 authors = ["Kiselev Aleksandr <askiselev00@gmail.com>"]
 maintainers = ["Kiselev Aleksandr <askiselev00@gmail.com>"]

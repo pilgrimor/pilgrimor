@@ -19,8 +19,12 @@ class PilgrimorSettings(BaseSettings):
     database_url: str = "postgres://pilgrimor:pilgrimor@localhost:5432/pilgrimor"
     migrator_cli: str = "RAW"
 
-    @classmethod
-    def new(cls) -> "PilgrimorSettings":  # noqa: C901, WPS210
+    class Config:
+        env_file = ".env"
+        env_prefix = "PILGRIMOR_"
+        env_file_encoding = "utf-8"
+
+    def add_new_fields(self) -> "PilgrimorSettings":  # noqa: C901, WPS210
         """
         Create new instance of Settings.
 
@@ -42,21 +46,10 @@ class PilgrimorSettings(BaseSettings):
         except KeyError:
             sys.exit(error_text("Can't find pyproject.toml."))
 
-        config = dotenv_values(pilgrimor_settings.pop("env_file"))
+        try:
+            self.database_engine = pilgrimor_settings["database_engine"]
+            self.migrations_dir = pilgrimor_settings["migrations_dir"]
+        except KeyError as exc:
+            sys.exit(error_text(f"Error in getting settings - {str(exc)}"))
 
-        if not config:
-            sys.exit(
-                error_text(
-                    "Can't find .env file. Please specify it in pyproject.toml.",
-                ),
-            )
-
-        if not (db_url := config.get("PILGRIMOR_DATABASE_URL")):
-            sys.exit(
-                error_text(
-                    "Can't get PILGRIMOR_DATABASE_URL from .env file.",
-                ),
-            )
-        pilgrimor_settings["database_url"] = db_url
-
-        return PilgrimorSettings(**pilgrimor_settings)
+        return self

@@ -7,7 +7,8 @@ from pilgrimor.settings import PilgrimorSettings
 def main() -> None:
     """Initializes all necessary instances and run migrator."""
     namespace = get_parse_args()
-    settings = PilgrimorSettings.new()
+    settings = PilgrimorSettings().add_new_fields()
+    print(settings)
     engine = get_engine(  # type: ignore
         settings,
     )(settings.database_url)
