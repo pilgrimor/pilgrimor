@@ -19,25 +19,30 @@ poetry add pilgrimor
 ### Main commands:
 * `initdb` - create technical migrations table.
 * `apply` - apply new migrations.
-* `apply —version <version number>` - apply new migrations with version.
-* `rollback —version <version number>`- rollback migrations to version inclusive.
-* `rollback —latest` - rollback to latest version.
+* `apply —-version <version number>` - apply new migrations with version.
+* `rollback —-version <version number>`- rollback migrations to version inclusive.
+* `rollback —-latest` - rollback to latest version.
 
-### Migration directory:
-Create a separate directory in the project for migration files.
-For exemple:
+### Necessary things
+You need to specify some fields in your pyproject.toml
 ```
-./migrations
+[tool.pilgrimor]
+migrations_dir = "./migrations/"
+database_engine = "PSQL"
+env_file = "./.env"
 ```
+migrations_dir - folder with migrations
+database_engine - there is only one database engine PSQL
+env_file = path to .env file
 
 ### Migration file structure:
 Migration file contains two blocks - apply and rollback with sql commands.
 For example:
 ```
-— apply —
+—- apply —-
 SQL CODE
 
-— rollback —
-SQL CODE 
+—- rollback —-
+SQL CODE
 ```
 
